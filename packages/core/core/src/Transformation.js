@@ -264,15 +264,7 @@ export default class Transformation {
       initialCacheEntry || (await this.runPipeline(pipeline, initialAsset));
 
     if (!initialCacheEntry) {
-      let resultCacheKey = this.getCacheKey(
-        [initialAsset],
-        pipeline.configs,
-        await getInvalidationHash(
-          assets.flatMap(asset => asset.getInvalidations()),
-          this.options,
-        ),
-      );
-      await this.writeToCache(resultCacheKey, assets, pipeline.configs);
+      await this.writeToCache(initialAssetCacheKey, assets, pipeline.configs);
     }
 
     let finalAssets: Array<UncommittedAsset> = [];
@@ -300,16 +292,15 @@ export default class Transformation {
       return finalAssets;
     }
 
-    let processedCacheEntry = await this.readFromCache(
-      this.getCacheKey(
-        finalAssets,
-        pipeline.configs,
-        await getInvalidationHash(
-          finalAssets.flatMap(asset => asset.getInvalidations()),
-          this.options,
-        ),
+    let processedCacheKey = this.getCacheKey(
+      finalAssets,
+      pipeline.configs,
+      await getInvalidationHash(
+        finalAssets.flatMap(asset => asset.getInvalidations()),
+        this.options,
       ),
     );
+    let processedCacheEntry = await this.readFromCache(processedCacheKey);
 
     invariant(pipeline.postProcess != null);
     let processedFinalAssets: Array<UncommittedAsset> =
@@ -317,14 +308,7 @@ export default class Transformation {
 
     if (!processedCacheEntry) {
       await this.writeToCache(
-        this.getCacheKey(
-          processedFinalAssets,
-          pipeline.configs,
-          await getInvalidationHash(
-            processedFinalAssets.flatMap(asset => asset.getInvalidations()),
-            this.options,
-          ),
-        ),
+        processedCacheKey,
         processedFinalAssets,
         pipeline.configs,
       );
