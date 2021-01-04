@@ -36,7 +36,9 @@ import logger from '@parcel/logger';
 import RequestTracker, {getWatcherOptions} from './RequestTracker';
 import createAssetGraphRequest from './requests/AssetGraphRequest';
 import createValidationRequest from './requests/ValidationRequest';
+import createBundleGraphRequest from './requests/BundleGraphRequest';
 import {Disposable} from '@parcel/events';
+import {deserialize, serialize} from './serializer';
 
 registerCoreWithSerializer();
 
@@ -135,13 +137,13 @@ export default class Parcel {
       options: resolvedOptions,
     });
 
-    this.#bundlerRunner = new BundlerRunner({
-      options: resolvedOptions,
-      optionsRef: optionsRef,
-      requestTracker: this.#requestTracker,
-      config: this.#config,
-      workerFarm: this.#farm,
-    });
+    // this.#bundlerRunner = new BundlerRunner({
+    //   options: resolvedOptions,
+    //   optionsRef: optionsRef,
+    //   requestTracker: this.#requestTracker,
+    //   config: this.#config,
+    //   workerFarm: this.#farm,
+    // });
 
     this.#reporterRunner = new ReporterRunner({
       config: this.#config,
@@ -286,19 +288,26 @@ export default class Parcel {
       } = await this.#requestTracker.runRequest(request);
       dumpGraphToGraphViz(assetGraph, 'MainAssetGraph');
 
-      // $FlowFixMe Added in Flow 0.121.0 upgrade in #4381
-      let [
-        bundleGraph,
-        serializedBundleGraph,
-      ] = await this.#bundlerRunner.bundle(assetGraph, {
-        signal,
+      let bundleGraphRequest = createBundleGraphRequest({
+        assetGraph,
+        optionsRef: this.#optionsRef,
       });
+
+      let bundleGraph = await this.#requestTracker.runRequest(bundleGraphRequest);
+
+      // $FlowFixMe Added in Flow 0.121.0 upgrade in #4381
+      // let [
+      //   bundleGraph,
+      //   serializedBundleGraph,
+      // ] = await this.#bundlerRunner.bundle(assetGraph, {
+      //   signal,
+      // });
       // $FlowFixMe Added in Flow 0.121.0 upgrade in #4381 (Windows only)
       dumpGraphToGraphViz(bundleGraph._graph, 'BundleGraph');
 
       await this.#packagerRunner.writeBundles(
         bundleGraph,
-        serializedBundleGraph,
+        serialize(bundleGraph),
       );
       assertSignalNotAborted(signal);
 
