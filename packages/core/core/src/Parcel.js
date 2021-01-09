@@ -95,7 +95,7 @@ export default class Parcel {
       config,
       resolvedOptions.packageManager,
       resolvedOptions.inputFS,
-      resolvedOptions.autoinstall,
+      resolvedOptions.shouldAutoInstall,
     );
 
     if (this.#initialOptions.workerFarm) {
@@ -105,7 +105,7 @@ export default class Parcel {
       this.#farm = this.#initialOptions.workerFarm;
     } else {
       this.#farm = createWorkerFarm({
-        patchConsole: resolvedOptions.patchConsole,
+        shouldPatchConsole: resolvedOptions.shouldPatchConsole,
       });
     }
 
@@ -187,10 +187,12 @@ export default class Parcel {
       this.#disposable.dispose(),
       await this.#requestTracker.writeToCache(),
     ]);
+    await this.#farm.callAllWorkers('clearConfigCache', []);
   }
 
   async _startNextBuild() {
     this.#watchAbortController = new AbortController();
+    await this.#farm.callAllWorkers('clearConfigCache', []);
 
     try {
       this.#watchEvents.emit({
@@ -270,7 +272,7 @@ export default class Parcel {
     this.#requestTracker.setSignal(signal);
     let options = nullthrows(this.#resolvedOptions);
     try {
-      if (options.profile) {
+      if (options.shouldProfile) {
         await this.startProfiling();
       }
       this.#reporterRunner.report({
