@@ -7,7 +7,7 @@ import type {
   Dependency,
   FilePath,
   InitialParcelOptions,
-  NamedBundle,
+  PackagedBundle,
 } from '@parcel/types';
 import type WorkerFarm from '@parcel/workers';
 
@@ -119,7 +119,7 @@ export function bundler(
 }
 
 export function findAsset(
-  bundleGraph: BundleGraph<NamedBundle>,
+  bundleGraph: BundleGraph<PackagedBundle>,
   assetFileName: string,
 ): ?Asset {
   return bundleGraph.traverseBundles((bundle, context, actions) => {
@@ -137,7 +137,7 @@ export function findAsset(
 }
 
 export function findDependency(
-  bundleGraph: BundleGraph<NamedBundle>,
+  bundleGraph: BundleGraph<PackagedBundle>,
   assetFileName: string,
   moduleSpecifier: string,
 ): Dependency {
@@ -157,7 +157,7 @@ export function findDependency(
 }
 
 export function assertDependencyWasDeferred(
-  bundleGraph: BundleGraph<NamedBundle>,
+  bundleGraph: BundleGraph<PackagedBundle>,
   assetFileName: string,
   moduleSpecifier: string,
 ): void {
@@ -171,7 +171,7 @@ export function assertDependencyWasDeferred(
 export async function bundle(
   entries: FilePath | Array<FilePath>,
   opts?: InitialParcelOptions,
-): Promise<BundleGraph<NamedBundle>> {
+): Promise<BundleGraph<PackagedBundle>> {
   return (await bundler(entries, opts).run()).bundleGraph;
 }
 
@@ -204,9 +204,9 @@ export function getNextBuild(b: Parcel): Promise<BuildEvent> {
 type RunOpts = {require?: boolean, ...};
 
 export async function runBundles(
-  bundleGraph: BundleGraph<NamedBundle>,
-  parent: NamedBundle,
-  bundles: Array<NamedBundle>,
+  bundleGraph: BundleGraph<PackagedBundle>,
+  parent: PackagedBundle,
+  bundles: Array<PackagedBundle>,
   globals: mixed,
   opts: RunOpts = {},
 ): Promise<mixed> {
@@ -283,8 +283,8 @@ export async function runBundles(
 }
 
 export async function runBundle(
-  bundleGraph: BundleGraph<NamedBundle>,
-  bundle: NamedBundle,
+  bundleGraph: BundleGraph<PackagedBundle>,
+  bundle: PackagedBundle,
   globals: mixed,
   opts: RunOpts = {},
 ): Promise<mixed> {
@@ -319,7 +319,7 @@ export async function runBundle(
 }
 
 export function run(
-  bundleGraph: BundleGraph<NamedBundle>,
+  bundleGraph: BundleGraph<PackagedBundle>,
   globals: mixed,
   opts: RunOpts = {},
   // $FlowFixMe[unclear-type]
@@ -331,7 +331,7 @@ export function run(
 }
 
 export function assertBundles(
-  bundleGraph: BundleGraph<NamedBundle>,
+  bundleGraph: BundleGraph<PackagedBundle>,
   expectedBundles: Array<{|
     name?: string | RegExp,
     type?: string,
@@ -351,7 +351,7 @@ export function assertBundles(
 
     assets.sort(byAlphabet);
     actualBundles.push({
-      name: path.basename(nullthrows(bundle.filePath)),
+      name: bundle.isInline ? bundle.name : path.basename(bundle.filePath),
       type: bundle.type,
       assets,
     });
@@ -388,13 +388,14 @@ export function assertBundles(
   for (let bundle of expectedBundles) {
     let actualBundle = actualBundles[i++];
     let name = bundle.name;
-    if (name != null) {
+    let actualName = actualBundle.name;
+    if (name != null && actualName != null) {
       if (typeof name === 'string') {
-        assert.equal(actualBundle.name, name);
+        assert.equal(actualName, name);
       } else if (name instanceof RegExp) {
         assert(
-          actualBundle.name.match(name),
-          `${actualBundle.name} does not match regexp ${name.toString()}`,
+          actualName.match(name),
+          `${actualName} does not match regexp ${name.toString()}`,
         );
       } else {
         // $FlowFixMe

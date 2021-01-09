@@ -5,7 +5,7 @@ import type {
   BundleGraph,
   FilePath,
   PluginOptions,
-  NamedBundle,
+  PackagedBundle,
 } from '@parcel/types';
 import type {Diagnostic} from '@parcel/diagnostic';
 import type {FileSystem} from '@parcel/fs';
@@ -58,7 +58,7 @@ export default class Server extends EventEmitter {
   pending: boolean;
   options: DevServerOptions;
   rootPath: string;
-  bundleGraph: BundleGraph<NamedBundle> | null;
+  bundleGraph: BundleGraph<PackagedBundle> | null;
   errors: Array<{|
     message: string,
     stack: string,
@@ -84,7 +84,7 @@ export default class Server extends EventEmitter {
     this.pending = true;
   }
 
-  buildSuccess(bundleGraph: BundleGraph<NamedBundle>) {
+  buildSuccess(bundleGraph: BundleGraph<PackagedBundle>) {
     this.bundleGraph = bundleGraph;
     this.errors = null;
     this.pending = false;
