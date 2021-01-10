@@ -15,6 +15,7 @@ for (let builtin of Module.builtinModules) {
 export type ResolveResult = {|
   resolved: FilePath | ModuleSpecifier,
   pkg?: ?PackageJSON,
+  pkgFilePath?: ?FilePath,
 |};
 
 export type ModuleInfo = {|

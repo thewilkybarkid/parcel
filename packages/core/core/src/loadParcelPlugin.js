@@ -21,10 +21,10 @@ export default async function loadPlugin<T>(
   resolveFrom: FilePath,
   keyPath: string,
   shouldAutoInstall: boolean,
-): Promise<{|plugin: T, version: Semver|}> {
-  let resolved, pkg;
+): Promise<{|plugin: T, version: Semver, pkgFilePath: FilePath|}> {
+  let resolved, pkg, pkgFilePath;
   try {
-    ({resolved, pkg} = await packageManager.resolve(pluginName, resolveFrom, {
+    ({resolved, pkg, pkgFilePath} = await packageManager.resolve(pluginName, resolveFrom, {
       shouldAutoInstall,
     }));
   } catch (err) {
@@ -104,5 +104,9 @@ export default async function loadPlugin<T>(
       `Plugin ${pluginName} is not a valid Parcel plugin, should export an instance of a Parcel plugin ex. "export default new Reporter({ ... })".`,
     );
   }
-  return {plugin, version: nullthrows(pkg).version};
+  return {
+    plugin,
+    version: nullthrows(pkg).version,
+    pkgFilePath: nullthrows(pkgFilePath)
+  };
 }

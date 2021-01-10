@@ -42,6 +42,7 @@ type LoadedPlugin<T> = {|
   plugin: T,
   resolveFrom: FilePath,
   keyPath: string,
+  pkgFilePath: FilePath,
 |};
 
 export default class ParcelConfig {
@@ -120,7 +121,7 @@ export default class ParcelConfig {
 
   loadPlugin<T>(
     node: ParcelPluginNode,
-  ): Promise<{|plugin: T, version: Semver|}> {
+  ): Promise<{|plugin: T, version: Semver, pkgFilePath: FilePath|}> {
     let plugin = this.pluginCache.get(node.packageName);
     if (plugin) {
       return plugin;
@@ -143,13 +144,14 @@ export default class ParcelConfig {
   ): Promise<Array<LoadedPlugin<T>>> {
     return Promise.all(
       plugins.map(async p => {
-        let {plugin, version} = await this.loadPlugin<T>(p);
+        let {plugin, version, pkgFilePath} = await this.loadPlugin<T>(p);
         return {
           name: p.packageName,
           plugin,
           version,
           resolveFrom: p.resolveFrom,
           keyPath: p.keyPath,
+          pkgFilePath,
         };
       }),
     );
@@ -252,7 +254,7 @@ export default class ParcelConfig {
     return this.bundler.packageName;
   }
 
-  getBundler(): Promise<{|version: Semver, plugin: Bundler|}> {
+  getBundler(): Promise<{|version: Semver, plugin: Bundler, pkgFilePath: FilePath|}> {
     if (!this.bundler) {
       throw new Error('No bundler specified in .parcelrc config');
     }

@@ -38,7 +38,7 @@ export class NodeResolver extends NodeResolverBase<Promise<ResolveResult>> {
     );
   }
 
-  findPackage(dir: FilePath): Promise<?PackageJSON> {
+  findPackage(dir: FilePath): Promise<?[PackageJSON, FilePath]> {
     let pkgFile = this.fs.findAncestorFile(['package.json'], dir);
     if (pkgFile != null) {
       return this.readPackage(pkgFile);
@@ -47,25 +47,25 @@ export class NodeResolver extends NodeResolverBase<Promise<ResolveResult>> {
     return Promise.resolve(null);
   }
 
-  async readPackage(file: FilePath): Promise<PackageJSON> {
+  async readPackage(file: FilePath): Promise<[PackageJSON, FilePath]> {
     let cached = this.packageCache.get(file);
 
     if (cached) {
-      return cached;
+      return [cached, file];
     }
 
     let json = await this.fs.readFile(file, 'utf8');
     let pkg = JSON.parse(json);
 
     this.packageCache.set(file, pkg);
-    return pkg;
+    return [pkg, file];
   }
 
-  loadAsFile(file: FilePath, pkg: ?PackageJSON): ?ResolveResult {
+  loadAsFile(file: FilePath, pkg: ?[PackageJSON, FilePath]): ?ResolveResult {
     // Try all supported extensions
     let found = this.fs.findFirstFile(this.expandFile(file));
     if (found) {
-      return {resolved: found, pkg};
+      return {resolved: found, pkg: pkg?.[0], pkgFilePath: pkg?.[1]};
     }
 
     return null;
@@ -73,13 +73,13 @@ export class NodeResolver extends NodeResolverBase<Promise<ResolveResult>> {
 
   async loadDirectory(
     dir: FilePath,
-    pkg: ?PackageJSON = null,
+    pkg: ?[PackageJSON, FilePath] = null,
   ): Promise<?ResolveResult> {
     try {
-      pkg = await this.readPackage(dir + '/package.json');
+      pkg = await this.readPackage(path.join(dir, 'package.json'));
 
       // Get a list of possible package entry points.
-      let entries = this.getPackageEntries(dir, pkg);
+      let entries = this.getPackageEntries(dir, pkg[0]);
 
       for (let file of entries) {
         // First try loading package.main as a file, then try as a directory.

@@ -207,6 +207,7 @@ export default class BundlerRunner {
       plugin: Namer,
       resolveFrom: FilePath,
       keyPath: string,
+      pkgFilePath: FilePath,
     |}>,
     internalBundle: InternalBundle,
     internalBundleGraph: InternalBundleGraph,

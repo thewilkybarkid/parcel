@@ -36,7 +36,7 @@ export class NodeResolverSync extends NodeResolverBase<ResolveResult> {
     return this.loadAsFile(id, pkg) || this.loadDirectory(id, pkg);
   }
 
-  findPackage(dir: FilePath): ?PackageJSON {
+  findPackage(dir: FilePath): ?[PackageJSON, FilePath] {
     // Find the nearest package.json file within the current node_modules folder
     let pkgFile = this.fs.findAncestorFile(['package.json'], dir);
     if (pkgFile != null) {
@@ -44,36 +44,36 @@ export class NodeResolverSync extends NodeResolverBase<ResolveResult> {
     }
   }
 
-  readPackage(file: FilePath): PackageJSON {
+  readPackage(file: FilePath): [PackageJSON, FilePath] {
     let cached = this.packageCache.get(file);
 
     if (cached) {
-      return cached;
+      return [cached, file];
     }
 
     let json = this.fs.readFileSync(file, 'utf8');
     let pkg = JSON.parse(json);
 
     this.packageCache.set(file, pkg);
-    return pkg;
+    return [pkg, file];
   }
 
-  loadAsFile(file: FilePath, pkg: ?PackageJSON): ?ResolveResult {
+  loadAsFile(file: FilePath, pkg: ?[PackageJSON, FilePath]): ?ResolveResult {
     // Try all supported extensions
     let found = this.fs.findFirstFile(this.expandFile(file));
     if (found) {
-      return {resolved: found, pkg};
+      return {resolved: found, pkg: pkg?.[0], pkgFilePath: pkg?.[1]};
     }
 
     return null;
   }
 
-  loadDirectory(dir: FilePath, pkg: ?PackageJSON = null): ?ResolveResult {
+  loadDirectory(dir: FilePath, pkg: ?[PackageJSON, FilePath] = null): ?ResolveResult {
     try {
-      pkg = this.readPackage(dir + '/package.json');
+      pkg = this.readPackage(path.join(dir, 'package.json'));
 
       // Get a list of possible package entry points.
-      let entries = this.getPackageEntries(dir, pkg);
+      let entries = this.getPackageEntries(dir, pkg[0]);
 
       for (let file of entries) {
         // First try loading package.main as a file, then try as a directory.
