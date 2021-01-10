@@ -197,7 +197,6 @@ export class AssetGraphBuilder {
     }
     dumpToGraphViz(this.assetGraph, this.name);
     // $FlowFixMe Added in Flow 0.121.0 upgrade in #4381
-    dumpToGraphViz(this.requestGraph, 'RequestGraph');
 
     dumpToGraphViz(this.assetGraph, 'AssetGraph');
 
