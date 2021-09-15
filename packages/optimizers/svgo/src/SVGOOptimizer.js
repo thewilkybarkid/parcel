@@ -29,7 +29,7 @@ export default (new Optimizer({
     }
 
     let code = await blobToString(contents);
-    let result = svgo.optimize(code, config);
+    let result = svgo.optimize(code, config ?? {});
     if (result.error != null) {
       throw new ThrowableDiagnostic({
         diagnostic: {
